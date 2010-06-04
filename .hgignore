@@ -1,0 +1,6 @@
+\.beam
+^retest$
+.~
+\.orig
+\.swp
+rt.work/*
