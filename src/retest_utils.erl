@@ -48,7 +48,7 @@ sh(Command, Env) ->
     sh(Command, Env, get_cwd()).
 
 sh(Command, Env, Dir) ->
-    ?INFO("sh: ~s\n~p\n", [Command, Env]),
+    ?DEBUG("sh: ~s\n~p\n", [Command, Env]),
     Port = open_port({spawn, Command}, [{cd, Dir}, {env, Env}, exit_status, {line, 16384},
                                         use_stdio, stderr_to_stdout]),
     case sh_loop(Port) of

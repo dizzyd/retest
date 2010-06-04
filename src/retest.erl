@@ -28,6 +28,16 @@
 
 -export([main/1]).
 
+%% API for test writers
+-export([sh/1, sh/3,
+         log/2, log/3]).
+
+-include("retest.hrl").
+
+%% ====================================================================
+%% Script entry point
+%% ====================================================================
+
 main(Args) ->
     case catch(retest_core:run(Args)) of
         ok ->
@@ -38,4 +48,40 @@ main(Args) ->
             %% Nothing should percolate up from retest_core; dump this error to console
             io:format("Uncaught error in retest_core: ~p\n", [Error]),
             halt(1)
+    end.
+
+
+%% ====================================================================
+%% API for test writers
+%% ====================================================================
+
+sh(Cmd) ->
+    sh(Cmd, [], retest_utils:get_cwd()).
+
+sh(Cmd, Env, Dir) ->
+    Port = open_port({spawn, Cmd}, [{cd, Dir}, {env, Env}, exit_status, {line, 16384},
+                                    use_stdio, stderr_to_stdout]),
+    sh_loop(Port, []).
+
+
+log(Level, Str) ->
+    retest_log:log(Level, Str, []).
+
+log(Level, Str, Args) ->
+    retest_log:log(Level, Str, Args).
+
+
+%% ====================================================================
+%% Internal functions
+%% ====================================================================
+
+sh_loop(Port, Acc) ->
+    receive
+        {Port, {data, {_, Line}}} ->
+            ?DEBUG("~p: ~s\n", [erlang:get(retest_module), Line]),
+            sh_loop(Port, [Line | Acc]);
+        {Port, {exit_status, 0}} ->
+            {ok, lists:reverse(Acc)};
+        {Port, {exit_status, Rc}} ->
+            {error, Rc}
     end.

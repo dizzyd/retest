@@ -145,6 +145,10 @@ run_tests([TestFile | Rest]) ->
 run_test(Config, Module, TestFile, TargetDir) ->
     BaseDir = filename:dirname(TestFile),
 
+    %% Set the module name in the pdict so that calls back into
+    %% the API can have some context
+    erlang:put(retest_module, Module),
+
     %% Invoke files/0
     case (catch Module:files()) of
         List when is_list(List) ->
@@ -155,9 +159,9 @@ run_test(Config, Module, TestFile, TargetDir) ->
                     ?ABORT("Test ~p failed to install: ~p\n", [Reason])
             end;
 
-        Error ->
+        Error1 ->
             ?ABORT("Test ~p failed when invoking ~p:files/1: ~p\n",
-                   [Module, Module, Error])
+                   [Module, Module, Error1])
     end,
 
     OldCwd = retest_utils:get_cwd(),
@@ -169,10 +173,10 @@ run_test(Config, Module, TestFile, TargetDir) ->
             ?INFO("Test ~p successful.\n", [Module]),
             file:set_cwd(OldCwd),
             ok;
-        Error ->
+        Error2 ->
             file:set_cwd(OldCwd),
             ?ABORT("Test ~p failed when invoking ~p:run/1: ~p\n",
-                   [Module, Module, Error])
+                   [Module, Module, Error2])
     end.
 
 
