@@ -41,7 +41,10 @@ run(Args) ->
     %% Parse out command line arguments -- what's left is a list of
     %% files or directories to process
     case getopt:parse(options(), Args) of
-        {ok, {_Options, Targets}} ->
+        {ok, {Options, Targets}} ->
+
+            %% Merge options into application env
+            merge_options(Options),
 
             %% Make sure crypto is running
             crypto:start(),
@@ -61,7 +64,8 @@ run(Args) ->
                     OutDir = filename:join(retest_config:get(out_dir), RunId),
                     ok = filelib:ensure_dir(OutDir ++ "/dummy"),
                     OutDirLink = filename:join([retest_config:get(out_dir), "current"]),
-                    [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [OutDirLink, OutDir, OutDirLink])),
+                    [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [OutDirLink, OutDir,
+                                                                OutDirLink])),
                     retest_config:set(run_dir, OutDir),
                     retest_config:set(run_id, RunId),
 
@@ -83,8 +87,17 @@ options() ->
     [
      %% {Name, ShortOpt, LongOpt, ArgSpec, HelpMsg}
      {help,     $h, "help",     boolean, "Show the program options"},
-     {verbose,  $v, "verbose",  boolean, "Be verbose about what gets done"}
+     {verbose,  $v, "verbose",  boolean, "Be verbose about what gets done"},
+     {outdir,   $o, "outdir",   string, "Directory to use for all test output"}
     ].
+
+merge_options([]) ->
+    ok;
+merge_options([{outdir, Dir} | Rest]) ->
+    application:set_env(retest, out_dir, Dir),
+    merge_options(Rest);
+merge_options([_Option | Rest]) ->
+    merge_options(Rest).
 
 
 is_test_file(Filename) ->
