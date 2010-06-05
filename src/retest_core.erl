@@ -205,6 +205,17 @@ execute_install([{copy, In, Out} | Rest], BaseDir, TargetDir) ->
                                filename:join(TargetDir, Out)]),
     retest_utils:sh(Cmd, []),
     execute_install(Rest, BaseDir, TargetDir);
+execute_install([{template, In, Out, Ctx} | Rest], BaseDir, TargetDir) ->
+    {ok, InFileData} = file:read_file(filename:join(BaseDir, In)),
+    OutFile = filename:join(TargetDir, Out),
+    ok = filelib:ensure_dir(OutFile),
+    case file:write_file(OutFile, render(InFileData, Ctx)) of
+        ok ->
+            ?DEBUG("Templated ~p\n", [OutFile]),
+            execute_install(Rest, BaseDir, TargetDir);
+        {error, Reason} ->
+            ?ABORT("Failed to template ~p: ~p\n", [OutFile, Reason])
+    end;
 execute_install([{create, Out, Contents} | Rest], BaseDir, TargetDir) ->
     OutFile = filename:join(TargetDir, Out),
     ok = filelib:ensure_dir(OutFile),
@@ -217,3 +228,13 @@ execute_install([{create, Out, Contents} | Rest], BaseDir, TargetDir) ->
     end;
 execute_install([Other | _Rest], _BaseDir, _TargetDir) ->
     {error, {unsupported_operation, Other}}.
+
+
+
+%%
+%% Render a binary to a string, using mustache and the specified context
+%%
+render(Bin, Context) ->
+    %% Be sure to escape any double-quotes before rendering...
+    Str = re:replace(Bin, "\"", "\\\\\"", [global, {return,list}]),
+    mustache:render(Str, Context).

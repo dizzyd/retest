@@ -4,6 +4,7 @@
   {vsn, "1"},
   {modules, [
              getopt,
+             mustache,
              retest,
              retest_core,
              retest_config,
