@@ -87,14 +87,26 @@ options() ->
     [
      %% {Name, ShortOpt, LongOpt, ArgSpec, HelpMsg}
      {help,     $h, "help",     boolean, "Show the program options"},
-     {verbose,  $v, "verbose",  boolean, "Be verbose about what gets done"},
-     {outdir,   $o, "outdir",   string, "Directory to use for all test output"}
+     {verbose,  $v, "verbose",  boolean, "Use debug level output"},
+     {outdir,   $o, "outdir",   string,  "Directory to use for all test output"},
+     {loglevel, $l, "loglevel", atom,    "Log output level: error, warn, info, debug"}
     ].
 
 merge_options([]) ->
     ok;
+merge_options([{verbose, true} | Rest]) ->
+    application:set_env(retest, log_level, debug),
+    merge_options(Rest);
 merge_options([{outdir, Dir} | Rest]) ->
     application:set_env(retest, out_dir, Dir),
+    merge_options(Rest);
+merge_options([{loglevel, Level} | Rest]) ->
+    case lists:member(Level, [error, warn, info, debug]) of
+        true ->
+            application:set_env(retest, log_level, Level);
+        false ->
+            ok
+    end,
     merge_options(Rest);
 merge_options([_Option | Rest]) ->
     merge_options(Rest).
