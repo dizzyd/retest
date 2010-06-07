@@ -9,6 +9,7 @@
              retest_core,
              retest_config,
              retest_log,
+             retest_sh,
              retest_utils
              ]},
   {registered, []},
@@ -18,6 +19,6 @@
                  ]},
   {env, [
          {out_dir, "rt.work"},
-         {log_level, debug}
+         {log_level, error}
         ]}
  ]}.

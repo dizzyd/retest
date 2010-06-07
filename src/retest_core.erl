@@ -157,6 +157,7 @@ run_tests([TestFile | Rest]) ->
         {'DOWN', Mref, process, Pid, normal} ->
             %% Test completed successfully, move on to the next one
             ?DEBUG("Completed ~p\n", [Module]),
+            erlang:yield(),
             run_tests(Rest);
 
         {'DOWN', Mref, process, Pid, Reason} ->
@@ -170,7 +171,7 @@ run_tests([TestFile | Rest]) ->
 run_test(Config, Module, TestFile, TargetDir) ->
     BaseDir = filename:dirname(TestFile),
 
-    %% Set the module name in the pdict so that calls back into
+    %% Set the module name in the pdict so that calls back into\\\
     %% the API can have some context
     erlang:put(retest_module, Module),
 
@@ -196,13 +197,21 @@ run_test(Config, Module, TestFile, TargetDir) ->
     case (catch Module:run(TargetDir)) of
         ok ->
             ?INFO("Test ~p successful.\n", [Module]),
+            cleanup_sh(),
             file:set_cwd(OldCwd),
             ok;
         Error2 ->
+            cleanup_sh(),
             file:set_cwd(OldCwd),
             ?ABORT("Test ~p failed when invoking ~p:run/1: ~p\n",
                    [Module, Module, Error2])
     end.
+
+
+
+cleanup_sh() ->
+    ?DEBUG("Cleaning up: ~p\n", [erlang:get()]),
+    retest_sh:stop_all().
 
 
 load_test(TestFile) ->
@@ -251,6 +260,21 @@ execute_install([{create, Out, Contents} | Rest], BaseDir, TargetDir) ->
         {error, Reason} ->
             ?ABORT("Failed to create ~p: ~p\n", [OutFile, Reason])
     end;
+execute_install([{replace, Out, Regex, Replacement} | Rest],
+                BaseDir, TargetDir) ->
+    execute_install([{replace, Out, Regex, Replacement, []} | Rest], BaseDir, TargetDir);
+execute_install([{replace, Out, Regex, Replacement, Opts} | Rest],
+                BaseDir, TargetDir) ->
+    Filename = filename:join(TargetDir, Out),
+    {ok, OrigData} = file:read_file(Filename),
+    Data = re:replace(OrigData, Regex, Replacement, [global, {return, binary}] ++ Opts),
+    case file:write_file(Filename, Data) of
+        ok ->
+            ?DEBUG("Edited ~s: s/~s/~s/\n", [Filename, Regex, Replacement]),
+            execute_install(Rest, BaseDir, TargetDir);
+        {error, Reason} ->
+            ?ABORT("Failed to edit ~p: ~p\n", [Filename, Reason])
+    end;
 execute_install([Other | _Rest], _BaseDir, _TargetDir) ->
     {error, {unsupported_operation, Other}}.
 
@@ -263,3 +287,5 @@ render(Bin, Context) ->
     %% Be sure to escape any double-quotes before rendering...
     Str = re:replace(Bin, "\"", "\\\\\"", [global, {return,list}]),
     mustache:render(Str, Context).
+
+

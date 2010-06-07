@@ -29,7 +29,9 @@
 -export([main/1]).
 
 %% API for test writers
--export([sh/1, sh/3,
+-export([sh/1, sh/2,
+         sh_expect/2, sh_expect/3,
+         sh_send/2,
          log/2, log/3]).
 
 -include("retest.hrl").
@@ -56,13 +58,19 @@ main(Args) ->
 %% ====================================================================
 
 sh(Cmd) ->
-    sh(Cmd, [], retest_utils:get_cwd()).
+    retest_sh:run(Cmd, []).
 
-sh(Cmd, Env, Dir) ->
-    Port = open_port({spawn, Cmd}, [{cd, Dir}, {env, Env}, exit_status, {line, 16384},
-                                    use_stdio, stderr_to_stdout]),
-    sh_loop(Port, []).
+sh(Cmd, Opts) ->
+    retest_sh:run(Cmd, Opts).
 
+sh_expect(Ref, Regex) ->
+    retest_sh:expect(Ref, Regex, []).
+
+sh_expect(Ref, Regex, RegexOpts) ->
+    retest_sh:expect(Ref, Regex, RegexOpts).
+
+sh_send(Ref, Line) ->
+    retest_sh:send(Ref, Line).
 
 log(Level, Str) ->
     retest_log:log(Level, Str, []).
@@ -71,17 +79,9 @@ log(Level, Str, Args) ->
     retest_log:log(Level, Str, Args).
 
 
+
+
+
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-
-sh_loop(Port, Acc) ->
-    receive
-        {Port, {data, {_, Line}}} ->
-            ?DEBUG("~p: ~s\n", [erlang:get(retest_module), Line]),
-            sh_loop(Port, [Line | Acc]);
-        {Port, {exit_status, 0}} ->
-            {ok, lists:reverse(Acc)};
-        {Port, {exit_status, Rc}} ->
-            {error, Rc}
-    end.
