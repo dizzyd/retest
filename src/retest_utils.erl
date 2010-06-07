@@ -78,7 +78,7 @@ now_id_str() ->
 
 abort(String, Args) ->
     ?ERROR(String, Args),
-    halt(1).
+    init:stop(1).
 
 %% ====================================================================
 %% Internal functions
