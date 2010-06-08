@@ -235,6 +235,14 @@ execute_install([], _BaseDir, _TargetDir) ->
 execute_install([{copy, In} | Rest], BaseDir, TargetDir) ->
     execute_install([{copy, In, ""} | Rest], BaseDir, TargetDir);
 execute_install([{copy, In, Out} | Rest], BaseDir, TargetDir) ->
+    InFile = filename:join(BaseDir, In),
+    OutFile = filename:join(TargetDir, Out),
+    case filelib:is_dir(InFile) of
+        true ->
+            ok;
+        false ->
+            ok = filelib:ensure_dir(OutFile)
+    end,
     Cmd = ?FMT("cp -R ~p ~p", [filename:join(BaseDir, In),
                                filename:join(TargetDir, Out)]),
     retest_utils:sh(Cmd, []),
