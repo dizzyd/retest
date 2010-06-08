@@ -43,12 +43,30 @@
 run(Cmd, Opts) ->
     Dir = proplists:get_value(dir, Opts, retest_utils:get_cwd()),
     Env = proplists:get_value(env, Opts, []),
-    Port = open_port({spawn, ?FMT("/bin/sh -c \"echo $$; exec ~s\"", [Cmd])}, [{cd, Dir}, {env, Env},
-                                    exit_status, {line, 16384},
-                                    use_stdio, stderr_to_stdout]),
-    Pid = read_pid(Port),
+
+    %% Try to be smart about the provided command. If it's got any && or ; in it,
+    %% it's a multi-statement bit of shell, so there's no good way for use to track
+    %% the PID.
+    case re:run(Cmd, "(&&|;)") of
+        nomatch ->
+            ActualCmd = ?FMT("/bin/sh -c \"echo $$; exec ~s\"", [Cmd]);
+        _ ->
+            ActualCmd = Cmd,
+            case proplists:get_bool(async, Opts) of
+                true ->
+                    ?ABORT("Async option not allowed with retest_sh:run/2 when command"
+                           "contains '&&' or ';': ~s\n", [Cmd]);
+                false ->
+                    ok
+            end
+    end,
+
+    Port = open_port({spawn, ActualCmd}, [{cd, Dir}, {env, Env},
+                                          exit_status, {line, 16384},
+                                          use_stdio, stderr_to_stdout]),
     case proplists:get_bool(async, Opts) of
         true ->
+            Pid = read_pid(Port),
             Ref = make_ref(),
             erlang:put(Ref, #sh{ pid = Pid, port = Port, opts = Opts}),
             Ref;
