@@ -61,9 +61,10 @@ run(Args) ->
                     %% Create our working directory for this run; link it to
                     %% out_dir/current
                     RunId = retest_utils:now_id_str(),
-                    OutDir = filename:join(retest_config:get(out_dir), RunId),
+                    OutDir = filename:absname(filename:join(retest_config:get(out_dir), RunId)),
+                    OutDirLink = filename:join(filename:dirname(OutDir), "current"),
                     ok = filelib:ensure_dir(OutDir ++ "/dummy"),
-                    OutDirLink = filename:join([retest_config:get(out_dir), "current"]),
+                    io:format("~p ~p\n", [OutDir, OutDirLink]),
                     [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [OutDirLink, OutDir,
                                                                 OutDirLink])),
                     retest_config:set(run_dir, OutDir),
