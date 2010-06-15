@@ -64,7 +64,6 @@ run(Args) ->
                     OutDir = filename:absname(filename:join(retest_config:get(out_dir), RunId)),
                     OutDirLink = filename:join(filename:dirname(OutDir), "current"),
                     ok = filelib:ensure_dir(OutDir ++ "/dummy"),
-                    io:format("~p ~p\n", [OutDir, OutDirLink]),
                     [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [OutDirLink, OutDir,
                                                                 OutDirLink])),
                     retest_config:set(run_dir, OutDir),
