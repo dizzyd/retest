@@ -76,12 +76,12 @@ run(Cmd, Opts) ->
 
 stop(Ref) ->
     #sh { pid = Pid, port = Port } = erlang:get(Ref),
-    os:cmd(?FMT("kill ~s", [Pid])),
+    _ = os:cmd(?FMT("kill ~s", [Pid])),
     exit_loop(Port).
 
 stop_all() ->
-    [ {ok, _} = stop(Ref) || {Ref, Sh} <- erlang:get(),
-                             is_record(Sh, sh)],
+    _ = [ {ok, _} = stop(Ref) || {Ref, Sh} <- erlang:get(),
+                                 is_record(Sh, sh)],
     ok.
 
 expect(Ref, Regex) ->

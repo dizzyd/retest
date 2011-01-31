@@ -47,7 +47,7 @@ run(Args) ->
             merge_options(Options),
 
             %% Make sure crypto is running
-            crypto:start(),
+            ok = crypto:start(),
 
             %% Scan the list of targets and identify the specific test
             %% files
@@ -148,7 +148,7 @@ run_tests([TestFile | Rest]) ->
     ?DEBUG("Compiled ~p\n", [Module]),
 
     %% Create working directory for test; ensure clean
-    Dir = filename:join(retest_config:get(run_dir), Module),
+    Dir = filename:join(retest_config:get(run_dir), atom_to_list(Module)),
     ok = filelib:ensure_dir(Dir ++ "/dummy"),
 
     ?DEBUG("Running ~p\n", [Module]),
@@ -168,7 +168,7 @@ run_tests([TestFile | Rest]) ->
     end.
 
 
-run_test(Config, Module, TestFile, TargetDir) ->
+run_test(_Config, Module, TestFile, TargetDir) ->
     BaseDir = filename:dirname(TestFile),
 
     %% Set the module name in the pdict so that calls back into\\\
@@ -198,11 +198,11 @@ run_test(Config, Module, TestFile, TargetDir) ->
         ok ->
             ?INFO("Test ~p successful.\n", [Module]),
             cleanup_sh(),
-            file:set_cwd(OldCwd),
+            ok = file:set_cwd(OldCwd),
             ok;
         Error2 ->
             cleanup_sh(),
-            file:set_cwd(OldCwd),
+            ok = file:set_cwd(OldCwd),
             ?ABORT("Test ~p failed when invoking ~p:run/1: ~p\n",
                    [Module, Module, Error2])
     end.
