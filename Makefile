@@ -1,6 +1,6 @@
 all:
-	./rebar compile escriptize
+	@rebar compile escriptize
 
 clean:
 	@rm -f retest
-	./rebar clean
+	@rebar clean
