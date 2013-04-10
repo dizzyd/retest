@@ -151,6 +151,7 @@ run_tests([TestFile | Rest]) ->
     Dir = filename:join(retest_config:get(run_dir), atom_to_list(Module)),
     ok = filelib:ensure_dir(Dir ++ "/dummy"),
 
+    Timeout = retest_config:get(Config, timeout),
     ?DEBUG("Running ~p\n", [Module]),
     {Pid, Mref} = spawn_monitor(fun() -> run_test(Config, Module, TestFile, Dir) end),
     receive
@@ -163,7 +164,7 @@ run_tests([TestFile | Rest]) ->
         {'DOWN', Mref, process, Pid, Reason} ->
             ?ABORT("Test ~p failed: ~p\n", [Module, Reason])
 
-    after 30000 ->
+    after Timeout ->
             ?ABORT("Test ~p timed out.\n", [Module])
     end.
 
