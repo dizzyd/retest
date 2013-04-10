@@ -19,6 +19,7 @@
                  ]},
   {env, [
          {out_dir, "rt.work"},
-         {log_level, error}
+         {log_level, error},
+         {timeout, 30000}
         ]}
  ]}.
