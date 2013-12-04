@@ -128,7 +128,7 @@ acc_loop(Port, Acc) ->
         {Port, {exit_status, 0}} ->
             {ok, lists:reverse(Acc)};
         {Port, {exit_status, Rc}} ->
-            {error, Rc};
+            {error, {stopped, {Rc, lists:reverse(Acc)}}};
         {Port, Other} ->
             ?DEBUG("Other: ~p\n", [Other]),
             acc_loop(Port, Acc)
