@@ -53,7 +53,7 @@ run(Args) ->
             %% files
             case scan_targets(Targets, []) of
                 [] ->
-                    ?ABORT("No test files found in these targets!\n", []);
+                    ?ABORT("No test files (*_rt.erl) found in these targets!\n", []);
 
                 TestFiles ->
                     ?DEBUG("Test files: ~p\n", [TestFiles]),
