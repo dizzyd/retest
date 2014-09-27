@@ -151,6 +151,15 @@ execute_cmds([{touch, Filename0} | Rest], BaseDir, TargetDir) ->
         {error, Reason} ->
             ?ABORT("Failed to touch ~p: ~p\n", [Filename1, Reason])
     end;
+execute_cmds([{create_dir, Out} | Rest], BaseDir, TargetDir) ->
+    Dir = filename:join(TargetDir, Out),
+    case file:make_dir(Dir) of
+        ok ->
+            ?DEBUG("Created directory ~p\n", [Dir]),
+            execute_cmds(Rest, BaseDir, TargetDir);
+        {error, Reason} ->
+            ?ABORT("Failed to create dir ~p: ~p\n", [Dir, Reason])
+    end;
 execute_cmds([Other | _Rest], _BaseDir, _TargetDir) ->
     {error, {unsupported_operation, Other}}.
 

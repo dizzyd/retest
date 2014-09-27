@@ -17,7 +17,7 @@ suite() -> [].
 all() ->
     [basic_run, basic_run_all_args, directory_does_not_exist,
      wrong_arguments, test_exceeds_timeout,
-     create, copy, template, replace, touch,
+     create, copy, template, replace, touch, create_dir,
      logging, shell_api, shell_async_api, shell_async_api].
 
 groups() ->
@@ -92,6 +92,11 @@ touch(doc) -> ["Test touch directive"];
 touch(suite) -> [];
 touch(Config) when is_list(Config)->
     ok = retest_run("touch", Config).
+
+create_dir(doc) -> ["Test create_dir directive"];
+create_dir(suite) -> [];
+create_dir(Config) when is_list(Config)->
+    ok = retest_run("create_dir", Config).
 
 logging(doc) -> ["Test logging"];
 logging(suite) -> [];
