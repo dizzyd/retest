@@ -187,7 +187,7 @@ run_test(_Config, Module, TestFile, TargetDir) ->
             end;
 
         Error1 ->
-            ?ABORT("Test ~p failed when invoking ~p:files/1: ~p\n",
+            ?ABORT("Test ~p failed when invoking ~p:files/1:\n~p\n",
                    [Module, Module, Error1])
     end,
 
@@ -204,7 +204,7 @@ run_test(_Config, Module, TestFile, TargetDir) ->
         Error2 ->
             cleanup_sh(),
             ok = file:set_cwd(OldCwd),
-            ?ABORT("Test ~p failed when invoking ~p:run/1: ~p\n",
+            ?ABORT("Test ~p failed when invoking ~p:run/1:\n~p\n",
                    [Module, Module, Error2])
     end.
 
