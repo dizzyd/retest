@@ -64,8 +64,7 @@ run(Args) ->
                     OutDir = filename:absname(filename:join(retest_config:get(out_dir), RunId)),
                     OutDirLink = filename:join(filename:dirname(OutDir), "current"),
                     ok = filelib:ensure_dir(OutDir ++ "/dummy"),
-                    [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s", [OutDirLink, OutDir,
-                                                                OutDirLink])),
+                    ok = symlink_target(os:type(), OutDirLink, OutDir),
                     retest_config:set(run_dir, OutDir),
                     retest_config:set(run_id, RunId),
 
@@ -179,7 +178,7 @@ run_test(_Config, Module, TestFile, TargetDir) ->
     %% Invoke files/0
     case (catch Module:files()) of
         List when is_list(List) ->
-            case execute_install(List, BaseDir, TargetDir) of
+            case retest_utils:execute_cmds(List, BaseDir, TargetDir) of
                 ok ->
                     ok;
                 {error, Reason} ->
@@ -230,80 +229,7 @@ load_test(TestFile) ->
             ?ABORT("Failed to compile test: ~p\n", [Error])
     end.
 
-
-execute_install([], _BaseDir, _TargetDir) ->
+symlink_target({win32, nt}, OutDirLink, OutDir) ->
+    os:cmd(?FMT("rmdir \"~s\" & mklink /d \"~s\" \"~s\"",
+          [OutDirLink, OutDirLink, OutDir])),
     ok;
-execute_install([{copy, In} | Rest], BaseDir, TargetDir) ->
-    execute_install([{copy, In, ""} | Rest], BaseDir, TargetDir);
-execute_install([{copy, In, Out} | Rest], BaseDir, TargetDir) ->
-    InFile = filename:join(BaseDir, In),
-    OutFile = filename:join(TargetDir, Out),
-    case filelib:is_dir(InFile) of
-        true ->
-            ok;
-        false ->
-            ok = filelib:ensure_dir(OutFile)
-    end,
-    Cmd = ?FMT("cp -R ~p ~p", [filename:join(BaseDir, In),
-                               filename:join(TargetDir, Out)]),
-    retest_utils:sh(Cmd, []),
-    execute_install(Rest, BaseDir, TargetDir);
-execute_install([{template, In, Out, Ctx} | Rest], BaseDir, TargetDir) ->
-    {ok, InFileData} = file:read_file(filename:join(BaseDir, In)),
-    OutFile = filename:join(TargetDir, Out),
-    ok = filelib:ensure_dir(OutFile),
-    case file:write_file(OutFile, render(InFileData, Ctx)) of
-        ok ->
-            ?DEBUG("Templated ~p\n", [OutFile]),
-            execute_install(Rest, BaseDir, TargetDir);
-        {error, Reason} ->
-            ?ABORT("Failed to template ~p: ~p\n", [OutFile, Reason])
-    end;
-execute_install([{create, Out, Contents} | Rest], BaseDir, TargetDir) ->
-    OutFile = filename:join(TargetDir, Out),
-    ok = filelib:ensure_dir(OutFile),
-    case file:write_file(OutFile, Contents) of
-        ok ->
-            ?DEBUG("Created ~p\n", [OutFile]),
-            execute_install(Rest, BaseDir, TargetDir);
-        {error, Reason} ->
-            ?ABORT("Failed to create ~p: ~p\n", [OutFile, Reason])
-    end;
-execute_install([{replace, Out, Regex, Replacement} | Rest],
-                BaseDir, TargetDir) ->
-    execute_install([{replace, Out, Regex, Replacement, []} | Rest], BaseDir, TargetDir);
-execute_install([{replace, Out, Regex, Replacement, Opts} | Rest],
-                BaseDir, TargetDir) ->
-    Filename = filename:join(TargetDir, Out),
-    {ok, OrigData} = file:read_file(Filename),
-    Data = re:replace(OrigData, Regex, Replacement, [global, {return, binary}] ++ Opts),
-    case file:write_file(Filename, Data) of
-        ok ->
-            ?DEBUG("Edited ~s: s/~s/~s/\n", [Filename, Regex, Replacement]),
-            execute_install(Rest, BaseDir, TargetDir);
-        {error, Reason} ->
-            ?ABORT("Failed to edit ~p: ~p\n", [Filename, Reason])
-    end;
-execute_install([{touch, Filename0} | Rest], BaseDir, TargetDir) ->
-    Filename1 = filename:join(TargetDir, Filename0),
-    case file:change_time(Filename1, calendar:local_time()) of
-        ok ->
-            ?DEBUG("Touched ~s\n", [Filename1]),
-            execute_install(Rest, BaseDir, TargetDir);
-        {error, Reason} ->
-            ?ABORT("Failed to touch ~p: ~p\n", [Filename1, Reason])
-    end;
-execute_install([Other | _Rest], _BaseDir, _TargetDir) ->
-    {error, {unsupported_operation, Other}}.
-
-
-
-%%
-%% Render a binary to a string, using mustache and the specified context
-%%
-render(Bin, Context) ->
-    %% Be sure to escape any double-quotes before rendering...
-    Str = re:replace(Bin, "\"", "\\\\\"", [global, {return,list}]),
-    mustache:render(Str, Context).
-
-

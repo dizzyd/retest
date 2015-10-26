@@ -40,6 +40,11 @@
 %% API for test writers
 %% ====================================================================
 
+run_shell_command({win32, nt}, Cmd) ->
+    ?FMT("cmd /q /c \"echo _pid_ & ~s\"", [filename:nativename(Cmd)]);
+run_shell_command(_, Cmd) ->
+    ?FMT("/bin/sh -c \"echo $$; exec ~s\"", [Cmd]).
+
 run(Cmd, Opts) ->
     Dir = proplists:get_value(dir, Opts, retest_utils:get_cwd()),
     Env = proplists:get_value(env, Opts, []),
@@ -49,7 +54,7 @@ run(Cmd, Opts) ->
     %% the PID.
     case re:run(Cmd, "(&&|;)") of
         nomatch ->
-            ActualCmd = ?FMT("/bin/sh -c \"echo $$; exec ~s\"", [Cmd]);
+            ActualCmd = run_shell_command(os:type(), Cmd);
         _ ->
             ActualCmd = Cmd,
             case proplists:get_bool(async, Opts) of
@@ -63,7 +68,8 @@ run(Cmd, Opts) ->
 
     Port = open_port({spawn, ActualCmd}, [{cd, Dir}, {env, Env},
                                           exit_status, {line, 16384},
-                                          use_stdio, stderr_to_stdout]),
+                                          use_stdio, stderr_to_stdout,
+                                          hide]),
     case proplists:get_bool(async, Opts) of
         true ->
             Pid = read_pid(Port),
