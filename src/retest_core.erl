@@ -284,6 +284,15 @@ execute_install([{replace, Out, Regex, Replacement, Opts} | Rest],
         {error, Reason} ->
             ?ABORT("Failed to edit ~p: ~p\n", [Filename, Reason])
     end;
+execute_install([{touch, Filename0} | Rest], BaseDir, TargetDir) ->
+    Filename1 = filename:join(TargetDir, Filename0),
+    case file:change_time(Filename1, calendar:local_time()) of
+        ok ->
+            ?DEBUG("Touched ~s\n", [Filename1]),
+            execute_install(Rest, BaseDir, TargetDir);
+        {error, Reason} ->
+            ?ABORT("Failed to touch ~p: ~p\n", [Filename1, Reason])
+    end;
 execute_install([Other | _Rest], _BaseDir, _TargetDir) ->
     {error, {unsupported_operation, Other}}.
 
