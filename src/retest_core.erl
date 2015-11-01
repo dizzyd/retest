@@ -233,3 +233,7 @@ symlink_target({win32, nt}, OutDirLink, OutDir) ->
     os:cmd(?FMT("rmdir \"~s\" & mklink /d \"~s\" \"~s\"",
           [OutDirLink, OutDirLink, OutDir])),
     ok;
+symlink_target(_, OutDirLink, OutDir) ->
+    [] = os:cmd(?FMT("rm -f ~s; ln -sf ~s ~s",
+            [OutDirLink, OutDir, OutDirLink])),
+    ok.
