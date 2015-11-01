@@ -32,7 +32,8 @@
 -export([sh/1, sh/2,
          sh_expect/2, sh_expect/3,
          sh_send/2,
-         log/2, log/3]).
+         log/2, log/3,
+         run/2]).
 
 -include("retest.hrl").
 
@@ -62,6 +63,13 @@ sh(Cmd) ->
 
 sh(Cmd, Opts) ->
     retest_sh:run(Cmd, Opts).
+
+run(Cmd, Opts) when is_tuple(Cmd) ->
+    BaseDir = proplists:get_value(dir, Opts, ""),
+    ok = retest_utils:execute_cmds([Cmd], BaseDir, BaseDir),
+    {ok, ""};
+run(Cmd, Opts) ->
+    sh(Cmd, Opts).
 
 sh_expect(Ref, Regex) ->
     retest_sh:expect(Ref, Regex, []).
