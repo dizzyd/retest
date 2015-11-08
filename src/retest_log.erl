@@ -39,7 +39,7 @@ log(Level, Str, Args) ->
                end,
     case should_log(LogLevel, Level) of
         true ->
-            io:format(log_prefix(Level) ++ Str, Args),
+            io:format(timestamp() ++ log_prefix(Level) ++ Str, Args),
             ok;
         false ->
             ok
@@ -66,5 +66,17 @@ log_prefix(info)  -> "INFO: ";
 log_prefix(warn)  -> "WARN: ";
 log_prefix(error) -> "ERROR: ".
 
+timestamp() ->
+    "[" ++ format_time(localtime_ms()) ++ "] ".
 
+localtime_ms() ->
+    {_, _, Micro} = Now = os:timestamp(),
+    {Date, {Hours, Minutes, Seconds}} = calendar:now_to_local_time(Now),
+    {Date, {Hours, Minutes, Seconds, Micro div 1000 rem 1000}}.
 
+format_time({{Y, M, D}, {H, Mi, S, Ms}}) ->
+    io_lib:format("~b-~2..0b-~2..0b", [Y, M, D]),
+        io_lib:format("~2..0b:~2..0b:~2..0b.~3..0b", [H, Mi, S, Ms]);
+format_time({{Y, M, D}, {H, Mi, S}}) ->
+    io_lib:format("~b-~2..0b-~2..0b", [Y, M, D]),
+        io_lib:format("~2..0b:~2..0b:~2..0b", [H, Mi, S]).
