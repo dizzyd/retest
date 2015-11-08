@@ -16,7 +16,7 @@ suite() -> [].
 
 all() ->
     [basic_run, basic_run_all_args, directory_does_not_exist,
-     wrong_arguments, test_exceeds_timeout,
+     wrong_arguments, test_exceeds_timeout, test_exceeds_custom_timeout,
      create, copy, template, replace, touch, create_dir,
      logging, shell_api, shell_async_api, shell_async_api].
 
@@ -67,6 +67,16 @@ test_exceeds_timeout(doc) -> ["Does retest correctly tests that exceed the confi
 test_exceeds_timeout(suite) -> [];
 test_exceeds_timeout(Config) when is_list(Config) ->
     ?assertException(throw, abort, retest_run("long_test", Config)).
+
+test_exceeds_custom_timeout(doc) -> ["Does retest correctly tests that exceed the custom timeout passed on the command line"];
+test_exceeds_custom_timeout(suite) -> [];
+test_exceeds_custom_timeout(Config) when is_list(Config) ->
+    {_, S0, _} = os:timestamp(),
+    ?assertException(throw, abort, retest_run("long_test_custom_timeout",
+                                              ["--timeout", "2000"], Config)),
+    {_, S1, _} = os:timestamp(),
+    %% there should only have elapsed 2s
+    2 = S1 - S0.
 
 copy(doc) -> ["Test copy directive"];
 copy(suite) -> [];

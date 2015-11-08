@@ -94,7 +94,8 @@ options() ->
      {help,     $h, "help",     boolean, "Show the program options"},
      {verbose,  $v, "verbose",  boolean, "Use debug level output"},
      {outdir,   $o, "outdir",   string,  "Directory to use for all test output"},
-     {loglevel, $l, "loglevel", atom,    "Log output level: error, warn, info, debug"}
+     {loglevel, $l, "loglevel", atom,    "Log output level: error, warn, info, debug"},
+     {timeout,  $t, "timeout",  integer, "Timeout value to apply to all tests (default: 30 seconds)"}
     ].
 
 merge_options([]) ->
@@ -112,6 +113,9 @@ merge_options([{loglevel, Level} | Rest]) ->
         false ->
             ok
     end,
+    merge_options(Rest);
+merge_options([{timeout, Timeout} | Rest]) ->
+    application:set_env(retest, timeout, Timeout),
     merge_options(Rest);
 merge_options([_Option | Rest]) ->
     merge_options(Rest).
