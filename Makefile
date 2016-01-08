@@ -4,6 +4,8 @@ all:
 debug:
 	@rebar compile escriptize
 
+travis: all
+
 clean:
 	@rm -f retest
 	@rebar clean
