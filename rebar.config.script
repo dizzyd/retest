@@ -1,0 +1,9 @@
+% vim: set ft=erlang expandtab softtabstop=4 shiftwidth=4:
+case os:getenv("DEBUG") of
+    "1" ->
+    	% get the current erl_opts, remove no_debug_info and add debug_info
+    	NewErlOpts = proplists:get_value(erl_opts, CONFIG) -- [no_debug_info] ++ [debug_info],
+    	% now replace the new erl opts in the current rebar configuration
+    	lists:keyreplace(erl_opts, 1, CONFIG, {erl_opts, NewErlOpts});
+    _ -> CONFIG % env var not defined or anything other than true
+end.
