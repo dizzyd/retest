@@ -1,2 +1,4 @@
-*.beam
 retest
+ebin/
+.rebar
+.dialyzer_plt
