@@ -68,9 +68,12 @@ typer:
 xref:
 	$(REBAR) xref
 
-test:
-	$(REBAR) eunit
+test: debug
+	@rm -rf ${CT_LOG}
+	@find src -type f -name *.erl -exec cp {} ebin \;
+	@find test -type f -name *.erl -exec cp {} ebin \;
 	$(REBAR) ct
+	@find ebin -type f -name "*.erl" -exec rm {} \;
 
 clean:
 	@rm -f retest
