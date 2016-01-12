@@ -44,7 +44,7 @@ debug:
 	DEBUG=1 $(REBAR) compile
 
 escriptize:
-	- $(REBAR) compile
+	- $(REBAR) escriptize
 
 $(DEPS_PLT):
 	@echo Building $(DEPS_PLT)
