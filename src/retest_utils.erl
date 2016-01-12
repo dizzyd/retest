@@ -79,7 +79,7 @@ now_id_str() ->
 
 abort(String, Args) ->
     ?ERROR(String, Args),
-    halt(1).
+    throw(abort).
 
 load_module(File) ->
     Opts = [binary, report, export_all],

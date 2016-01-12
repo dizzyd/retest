@@ -36,7 +36,10 @@
 
 run(Args) ->
     %% Pre-load the retest app so that we get default configuration
-    ok = application:load(retest),
+    ok = case application:load(retest) of
+            ok -> ok;
+            {error,{already_loaded,retest}} -> ok
+         end,
 
     %% Parse out command line arguments -- what's left is a list of
     %% files or directories to process
@@ -47,7 +50,10 @@ run(Args) ->
             merge_options(Options),
 
             %% Make sure crypto is running
-            ok = crypto:start(),
+            ok = case crypto:start() of
+                    ok -> ok;
+                    {error, {already_started, crypto}} -> ok
+                 end,
 
             %% Scan the list of targets and identify the specific test
             %% files

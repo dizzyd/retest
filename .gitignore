@@ -2,3 +2,6 @@ retest
 ebin/
 .rebar
 .dialyzer_plt
+.eunit/
+logs/
+test/*.beam
