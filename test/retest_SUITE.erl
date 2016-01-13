@@ -115,6 +115,6 @@ shell_async_api(suite) -> [];
 shell_async_api(Config) when is_list(Config)->
     Ref1 = retest:sh("echo test1", [async]),
     {ok, [{0,5}]} = retest:sh_expect(Ref1, "test1", []),
-    Ref2 = retest:sh("sleep 5", [async]),
+    _Ref2 = retest:sh("sleep 5", [async]),
     timer:sleep(1000),
     ok = retest_sh:stop_all().
