@@ -29,7 +29,7 @@ endif
 .PHONY: all compile clean dialyze typer distclean \
    		rebuild test
 
-all: compile escriptize
+all: compile escriptize test
 
 travis: all
 

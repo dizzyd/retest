@@ -33,7 +33,10 @@
 %% ===================================================================
 
 log(Level, Str, Args) ->
-    LogLevel = application:get_env(retest, log_level, error),
+    LogLevel = case application:get_env(retest, log_level) of
+                    {ok, Val} -> Val;
+                    undefined -> undefined
+               end,
     case should_log(LogLevel, Level) of
         true ->
             io:format(log_prefix(Level) ++ Str, Args),
