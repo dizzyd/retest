@@ -74,7 +74,7 @@ run(Args) ->
                     retest_config:set(run_dir, OutDir),
                     retest_config:set(run_id, RunId),
 
-                    run_tests(TestFiles)
+                    run_tests(TestFiles, Targets)
             end;
 
         {error, {Reason, Data}} ->
@@ -145,10 +145,9 @@ scan_targets([Target | Rest], Acc) ->
             end
     end.
 
-
-run_tests([]) ->
+run_tests([], _) ->
     ok;
-run_tests([TestFile | Rest]) ->
+run_tests([TestFile | Rest], Targets) ->
     %% Load retest.config if it exists
     Config = retest_config:new(filename:dirname(TestFile)),
 
@@ -162,13 +161,15 @@ run_tests([TestFile | Rest]) ->
 
     Timeout = retest_config:get(Config, timeout),
     ?DEBUG("Running ~p\n", [Module]),
-    {Pid, Mref} = spawn_monitor(fun() -> run_test(Config, Module, TestFile, Dir) end),
+    {Pid, Mref} = spawn_monitor(fun() ->
+                                    run_test(Config, Module, TestFile, Dir, Targets)
+                                end),
     receive
         {'DOWN', Mref, process, Pid, normal} ->
             %% Test completed successfully, move on to the next one
             ?DEBUG("Completed ~p\n", [Module]),
             erlang:yield(),
-            run_tests(Rest);
+            run_tests(Rest, Targets);
 
         {'DOWN', Mref, process, Pid, Reason} ->
             ?ABORT("Test ~p failed: ~p\n", [Module, Reason])
@@ -177,13 +178,27 @@ run_tests([TestFile | Rest]) ->
             ?ABORT("Test ~p timed out.\n", [Module])
     end.
 
-
-run_test(_Config, Module, TestFile, TargetDir) ->
+run_test(_Config, Module, TestFile, TargetDir, Targets) ->
     BaseDir = filename:dirname(TestFile),
 
     %% Set the module name in the pdict so that calls back into\\\
     %% the API can have some context
     erlang:put(retest_module, Module),
+
+    %% Invoke setup/1 (optional)
+    case erlang:function_exported(Module, setup, 1) of
+        true ->
+            ?DEBUG("setup args: ~p\n", [Targets]),
+            case catch Module:setup(Targets) of
+                ok ->
+                    ?DEBUG("Test ~p invoked setup callback successfully\n", [Module]),
+                    ok;
+                Reason0 ->
+                    ?ABORT("Test ~p failed to setup: ~p\n",
+                        [Module, Reason0])
+            end;
+        false -> ok
+    end,
 
     %% Invoke files/0
     case (catch Module:files()) of
@@ -191,8 +206,9 @@ run_test(_Config, Module, TestFile, TargetDir) ->
             case retest_utils:execute_cmds(List, BaseDir, TargetDir) of
                 ok ->
                     ok;
-                {error, Reason} ->
-                    ?ABORT("Test ~p failed to install: ~p\n", [Reason])
+                {error, Reason1} ->
+                    ?ABORT("Test ~p failed to install: ~p\n",
+                        [Module, Reason1])
             end;
 
         Error1 ->

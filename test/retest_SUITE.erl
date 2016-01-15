@@ -17,7 +17,7 @@ suite() -> [].
 all() ->
     [basic_run, basic_run_all_args, directory_does_not_exist,
      wrong_arguments, test_exceeds_timeout, test_exceeds_custom_timeout,
-     create, copy, template, replace, touch, create_dir,
+     setup, create, copy, template, replace, touch, create_dir,
      logging, shell_api, shell_async_api, shell_async_api].
 
 groups() ->
@@ -133,3 +133,8 @@ shell_async_api(Config) when is_list(Config)->
     _Ref2 = retest:sh("sleep 5", [async]),
     timer:sleep(1000),
     ok = retest_sh:stop_all().
+
+setup(doc) -> ["Test setup optional callback"];
+setup(suite) -> [];
+setup(Config) when is_list(Config)->
+    ok = retest_run("setup", Config).

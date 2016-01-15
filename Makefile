@@ -43,7 +43,7 @@ compile:
 debug:
 	DEBUG=1 $(REBAR) compile
 
-escriptize:
+escriptize: compile
 	- $(REBAR) escriptize
 
 $(DEPS_PLT):
