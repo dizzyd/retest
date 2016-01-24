@@ -83,7 +83,7 @@ run(Cmd, Opts) ->
 stop(Ref) ->
     #sh { pid = Pid, port = Port } = erlang:get(Ref),
     _ = os:cmd(?FMT("kill ~s", [Pid])),
-    exit_loop(Port).
+    exit_loop(Ref, Port).
 
 stop_all() ->
     _ = [ {ok, _} = stop(Ref) || {Ref, Sh} <- erlang:get(),
@@ -115,13 +115,14 @@ read_pid(Port) ->
             {error, {stopped, Rc}}
     end.
 
-exit_loop(Port) ->
+exit_loop(Ref, Port) ->
     receive
         {Port, {data, {_, Line}}} ->
             ?DEBUG("~p: ~s\n", [erlang:get(retest_module), Line]),
-            exit_loop(Port);
+            exit_loop(Ref, Port);
 
         {Port, {exit_status, Rc}} ->
+            erlang:erase(Ref),
             {ok, Rc}
     end.
 
